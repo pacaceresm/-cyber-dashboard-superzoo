@@ -131,8 +131,48 @@ body{background:var(--gray1);color:var(--text);font-family:var(--font-body);font
 .prod-count-badge{font-size:10px;color:var(--gray4);font-weight:600;text-align:center;padding-bottom:4px;}
 .no-results{padding:20px;text-align:center;color:var(--gray4);font-size:12px;}
 
-@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr);}.charts-row,.products-row{grid-template-columns:1fr;}.search-input{width:100%;}}
-@media(max-width:600px){.topbar{height:auto;padding:10px;flex-wrap:wrap;}.topbar-right{width:100%;}.main{padding:10px;}.kpi-val-2026{font-size:17px;}.ctrlbar{padding:10px;gap:10px;}.range-wrap{min-width:150px;}}
+@media(max-width:900px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .charts-row,.products-row{grid-template-columns:1fr;}
+  .search-input{width:100%;}
+  .ctrlbar{gap:12px;}
+}
+@media(max-width:600px){
+  .topbar{height:auto;padding:10px 14px;flex-wrap:wrap;gap:8px;}
+  .topbar-right{width:100%;justify-content:flex-start;gap:6px;flex-wrap:wrap;}
+  .info-badge{font-size:10px;padding:3px 8px;}
+  .upload-btn{font-size:10px;padding:6px 10px;}
+  .corte-banner{font-size:11px;padding:5px 14px;}
+  .ctrlbar{padding:10px 14px;gap:10px;flex-direction:column;align-items:stretch;}
+  .ctrl-group{width:100%;}
+  .day-tabs{flex-wrap:wrap;}
+  .day-tab{flex:1;min-width:80px;text-align:center;font-size:11px;padding:5px 8px;}
+  .stepper-row{justify-content:center;}
+  .tab-toggle{width:100%;}
+  .tab-btn{flex:1;text-align:center;}
+  .range-badge{text-align:center;}
+  .main{padding:10px 12px;gap:12px;}
+  .kpi-row{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .kpi-card{padding:10px 12px;}
+  .kpi-val-2026{font-size:16px;}
+  .kpi-val-2025{font-size:12px;}
+  .kpi-lbl{font-size:9px;}
+  .kpi-delta-pill{font-size:10px;padding:2px 8px;}
+  .chart-card{padding:12px;}
+  .chart-wrap{height:150px;}
+  .chart-title{font-size:12px;}
+  .products-top{flex-direction:column;align-items:stretch;}
+  .search-input{width:100%;font-size:12px;}
+  .prod-header{padding:10px 12px;}
+  .prod-title{font-size:12px;}
+  .prod-item{padding:6px 10px;gap:5px;}
+  .prod-name{font-size:10px;}
+  .prod-bar-wrap{width:40px;}
+  .prod-qty{width:28px;font-size:11px;}
+  .prod-pct{font-size:9px;padding:1px 5px;}
+  .section-label{font-size:10px;}
+  .btn-more{font-size:11px;padding:6px;}
+}
 </style>
 </head>
 <body>
@@ -572,7 +612,7 @@ function getProductRankings() {
 
   return {
     top_sold: matched.filter(p => p.q26 > 0).sort((a, b) => b.q26 - a.q26),
-    growing:  matched.filter(m => m.pct && m.pct > 0 && m.q25 >= 2).sort((a, b) => b.pct - a.pct),
+    growing:  matched.filter(m => m.pct && m.pct > 0 && m.q25 >= 2).sort((a, b) => b.q26 - a.q26),
     falling:  matched.filter(m => m.diff < 0 && m.q25 > 3).sort((a, b) => a.diff - b.diff)
   };
 }
