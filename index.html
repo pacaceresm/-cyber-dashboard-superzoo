@@ -118,7 +118,7 @@ body{background:var(--gray1);color:var(--text);font-family:var(--font-body);font
 .prod-name{flex:1;font-size:11px;font-weight:600;color:var(--text);line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .prod-bar-wrap{width:55px;flex-shrink:0;}
 .prod-bar-bg{height:5px;background:var(--gray2);border-radius:3px;position:relative;}
-.prod-bar-fill{height:5px;border-radius:3px;position:absolute;top:0;left:0;transition:width 0.3s;}
+.prod-bar-fill{height:5px;border-radius:3px;position:absolute;top:0;left:0;transition:width 0.3s;max-width:100%;}
 .bar-red{background:var(--red);}
 .bar-green{background:var(--green);}
 .bar-fall{background:#e06060;}
@@ -632,7 +632,8 @@ function renderList(lId,bId,cId,arr,type){
   ul.innerHTML='';
   if(!filtered.length){ul.innerHTML='<li class="no-results">Sin resultados</li>';document.getElementById(bId).style.display='none';document.getElementById(cId).textContent='';return;}
   const slice=filtered.slice(0,pages[type]);
-  const maxVal=type==='top'?Math.max(...slice.map(p=>p.q26)):type==='grow'?Math.max(...slice.map(p=>p.pct||0)):Math.max(...slice.map(p=>Math.abs(p.diff)));
+  // maxVal from FULL array so scale stays consistent when Ver más loads more items
+  const maxVal=type==='top'?Math.max(...filtered.map(p=>p.q26)):type==='grow'?Math.max(...filtered.map(p=>p.pct||0)):Math.max(...filtered.map(p=>Math.abs(p.diff)));
   slice.forEach((p,i)=>{
     const li=document.createElement('li'); li.className='prod-item';
     const rank=i+1;
@@ -640,7 +641,7 @@ function renderList(lId,bId,cId,arr,type){
     if(type==='top'){barVal=p.q26;barColor='bar-red';badge=p.pct!=null?'<span class="prod-pct '+(p.pct>=0?'pct-green':'pct-red')+'">'+(p.pct>=0?'+':'')+p.pct+'%</span>':'<span class="prod-pct" style="background:#f0f4ff;color:#6b7bab;font-size:9px">NUEVO</span>';}
     else if(type==='grow'){barVal=p.pct;barColor='bar-green';badge='<span class="prod-pct pct-green">+'+p.pct+'%</span>';}
     else{barVal=Math.abs(p.diff);barColor='bar-fall';badge='<span class="prod-pct pct-red">'+p.diff+'</span>';}
-    const bp=maxVal>0?Math.round(barVal/maxVal*100):0;
+    const bp=maxVal>0?Math.min(100,Math.round(barVal/maxVal*100)):0;
     // Show 2025 qty for top_sold to allow direct comparison
     const q25tag = (type==='top' && p.q25>0) ? '<span style="font-size:9px;color:var(--gray4);font-weight:600;flex-shrink:0;min-width:24px;text-align:right" title="2025: '+p.q25+' uds">'+p.q25+'</span>' : '';
     li.innerHTML='<span class="prod-rank'+(rank<=3?' top3':'')+'">' +rank+'</span><span class="prod-name" title="'+p.name+' | 2026: '+p.q26+' | 2025: '+p.q25+'">'+p.name+'</span><div class="prod-bar-wrap"><div class="prod-bar-bg"><div class="prod-bar-fill '+barColor+'" style="width:'+bp+'%"></div></div></div><span class="prod-qty">'+(type==='fall'?p.diff:p.q26)+'</span>'+badge+q25tag;
