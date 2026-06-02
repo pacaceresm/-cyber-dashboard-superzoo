@@ -597,7 +597,7 @@ function renderList(lId,bId,cId,arr,type){
     const li=document.createElement('li'); li.className='prod-item';
     const rank=i+1;
     let barVal,barColor,badge;
-    if(type==='top'){barVal=p.q26;barColor='bar-red';badge=p.pct!=null?'<span class="prod-pct '+(p.pct>=0?'pct-green':'pct-red')+'">'+(p.pct>=0?'+':'')+p.pct+'%</span>':'';}
+    if(type==='top'){barVal=p.q26;barColor='bar-red';badge=p.pct!=null?'<span class="prod-pct '+(p.pct>=0?'pct-green':'pct-red')+'">'+(p.pct>=0?'+':'')+p.pct+'%</span>':'<span class="prod-pct" style="background:#f0f4ff;color:#6b7bab;font-size:9px">NUEVO</span>';}
     else if(type==='grow'){barVal=p.pct;barColor='bar-green';badge='<span class="prod-pct pct-green">+'+p.pct+'%</span>';}
     else{barVal=Math.abs(p.diff);barColor='bar-fall';badge='<span class="prod-pct pct-red">'+p.diff+'</span>';}
     const bp=maxVal>0?Math.round(barVal/maxVal*100):0;
