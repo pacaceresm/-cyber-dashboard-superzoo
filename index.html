@@ -380,6 +380,7 @@ function setDay(d) {
   state.day = d; state.isTotal = false;
   document.querySelectorAll('.day-tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.day-tab')[Object.keys(RAW.dias).sort().indexOf(d)].classList.add('active');
+  document.getElementById('sliderGroup').style.display = '';
   initSlider();
   updateCorteLabel(); updateKPIs(); buildCharts();
   pages={top:PAGE_SIZE,grow:PAGE_SIZE,fall:PAGE_SIZE}; renderProducts();
@@ -389,6 +390,7 @@ function setTotal() {
   state.isTotal = true;
   document.querySelectorAll('.day-tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.day-tab.total')[0].classList.add('active');
+  document.getElementById('sliderGroup').style.display = 'none';
   // For total: max hours = max across all days (use 23 since day1 has H23)
   state.hMin = 0; state.hMax = 23;
   state.hMin = 0; state.hMax = 23;
@@ -543,37 +545,35 @@ function buildCharts() {
 
 // ── PRODUCTS ──
 function getProductRankings() {
-  const hMin=state.hMin, hMax=state.hMax;
-
-  // Gather all products across relevant days
-  let dayKeys = state.isTotal ? Object.keys(RAW.prods) : [state.day];
+  const hMin = state.hMin, hMax = state.hMax;
+  let dayKeys = state.isTotal ? Object.keys(RAW.prods).sort() : [state.day];
   const allPids = {};
 
+  // Always sum hMin..hMax for BOTH years — ensures apples-to-apples comparison
+  const sliceSum = (arr) => {
+    let s = 0;
+    for (let h = hMin; h <= hMax; h++) s += (arr[h] || 0);
+    return s;
+  };
+
   dayKeys.forEach(dk => {
-    (RAW.prods[dk]||[]).forEach(p => {
-      if (!allPids[p.pid]) allPids[p.pid] = {name:p.name, q26:0, q25:0};
-      const slice = (arr) => arr.slice(hMin, hMax+1).reduce((s,v)=>s+v,0);
-      if (state.view==='acum') {
-        allPids[p.pid].q26 += slice(p.q26);
-        allPids[p.pid].q25 += slice(p.q25);
-      } else {
-        // single hour: use hMax (right thumb position)
-        allPids[p.pid].q26 += (p.q26[hMax]||0);
-        allPids[p.pid].q25 += (p.q25[hMax]||0);
-      }
+    (RAW.prods[dk] || []).forEach(p => {
+      if (!allPids[p.pid]) allPids[p.pid] = {name: p.name, q26: 0, q25: 0};
+      allPids[p.pid].q26 += sliceSum(p.q26);
+      allPids[p.pid].q25 += sliceSum(p.q25);
     });
   });
 
-  const matched = Object.entries(allPids).map(([pid,v])=>{
-    const diff=v.q26-v.q25;
-    const pct=v.q25>0?Math.round((v.q26-v.q25)/v.q25*1000)/10:null;
-    return{pid,name:v.name,q26:v.q26,q25:v.q25,diff,pct};
-  }).filter(p=>p.q26>0||p.q25>0);
+  const matched = Object.entries(allPids).map(([pid, v]) => {
+    const diff = v.q26 - v.q25;
+    const pct = v.q25 > 0 ? Math.round((v.q26 - v.q25) / v.q25 * 1000) / 10 : null;
+    return {pid, name: v.name, q26: v.q26, q25: v.q25, diff, pct};
+  }).filter(p => p.q26 > 0 || p.q25 > 0);
 
   return {
-    top_sold: matched.filter(p=>p.q26>0).sort((a,b)=>b.q26-a.q26),
-    growing:  matched.filter(m=>m.pct&&m.pct>0&&m.q25>=2).sort((a,b)=>b.pct-a.pct),
-    falling:  matched.filter(m=>m.diff<0&&m.q25>3).sort((a,b)=>a.diff-b.diff)
+    top_sold: matched.filter(p => p.q26 > 0).sort((a, b) => b.q26 - a.q26),
+    growing:  matched.filter(m => m.pct && m.pct > 0 && m.q25 >= 2).sort((a, b) => b.pct - a.pct),
+    falling:  matched.filter(m => m.diff < 0 && m.q25 > 3).sort((a, b) => a.diff - b.diff)
   };
 }
 
@@ -601,7 +601,9 @@ function renderList(lId,bId,cId,arr,type){
     else if(type==='grow'){barVal=p.pct;barColor='bar-green';badge='<span class="prod-pct pct-green">+'+p.pct+'%</span>';}
     else{barVal=Math.abs(p.diff);barColor='bar-fall';badge='<span class="prod-pct pct-red">'+p.diff+'</span>';}
     const bp=maxVal>0?Math.round(barVal/maxVal*100):0;
-    li.innerHTML='<span class="prod-rank'+(rank<=3?' top3':'')+'">' +rank+'</span><span class="prod-name" title="'+p.name+'">'+p.name+'</span><div class="prod-bar-wrap"><div class="prod-bar-bg"><div class="prod-bar-fill '+barColor+'" style="width:'+bp+'%"></div></div></div><span class="prod-qty">'+(type==='fall'?p.diff:p.q26)+'</span>'+badge;
+    // Show 2025 qty for top_sold to allow direct comparison
+    const q25tag = (type==='top' && p.q25>0) ? '<span style="font-size:9px;color:var(--gray4);font-weight:600;flex-shrink:0;min-width:24px;text-align:right" title="2025: '+p.q25+' uds">'+p.q25+'</span>' : '';
+    li.innerHTML='<span class="prod-rank'+(rank<=3?' top3':'')+'">' +rank+'</span><span class="prod-name" title="'+p.name+' | 2026: '+p.q26+' | 2025: '+p.q25+'">'+p.name+'</span><div class="prod-bar-wrap"><div class="prod-bar-bg"><div class="prod-bar-fill '+barColor+'" style="width:'+bp+'%"></div></div></div><span class="prod-qty">'+(type==='fall'?p.diff:p.q26)+'</span>'+badge+q25tag;
     ul.appendChild(li);
   });
   const btn=document.getElementById(bId);
