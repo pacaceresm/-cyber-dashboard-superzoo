@@ -632,7 +632,7 @@ function renderList(lId,bId,cId,arr,type){
   ul.innerHTML='';
   if(!filtered.length){ul.innerHTML='<li class="no-results">Sin resultados</li>';document.getElementById(bId).style.display='none';document.getElementById(cId).textContent='';return;}
   const slice=filtered.slice(0,pages[type]);
-  const maxVal=type==='top'?slice[0].q26:type==='grow'?slice[0].pct:Math.abs(slice[0].diff);
+  const maxVal=type==='top'?Math.max(...slice.map(p=>p.q26)):type==='grow'?Math.max(...slice.map(p=>p.pct||0)):Math.max(...slice.map(p=>Math.abs(p.diff)));
   slice.forEach((p,i)=>{
     const li=document.createElement('li'); li.className='prod-item';
     const rank=i+1;
