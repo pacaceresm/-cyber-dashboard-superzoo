@@ -395,6 +395,9 @@ function updateSliderUI() {
 }
 
 // ── DAY TABS ──
+function curDias() {
+  return state.mode === 'semana' ? RAW.semana.dias : RAW.cyber.dias;
+}
 function curDay() { const d = curDias(); return d[state.day] || d[Object.keys(d)[0]]; }
 
 function buildDayTabs() {
@@ -513,7 +516,7 @@ function buildSummary(){
   tbody.innerHTML='';
   let tot26={orders:0,neto:0,cantidad:0}, tot25={orders:0,neto:0,cantidad:0};
   Object.keys(curDias()).sort().forEach(cd=>{
-    const d=RAW.dias[cd];
+    const d=curDias()[cd];
     const n26=d.h26.reduce((s,h)=>s+h.neto,0), o26=d.h26.reduce((s,h)=>s+h.orders,0);
     const n25=d.h25.reduce((s,h)=>s+h.neto,0), o25=d.h25.reduce((s,h)=>s+h.orders,0);
     const dn=delta(n26,n25), dod=delta(o26,o25);
@@ -549,7 +552,7 @@ function buildCharts(){
   let labels=[],n26=[],n25=[],o26=[],o25=[];
   if(state.isTotal){
     Object.keys(curDias()).sort().forEach(dk=>{
-      const d=RAW.dias[dk];
+      const d=curDias()[dk];
       const s26=d.h26.slice(hMin,hMax+1), s25=d.h25.slice(hMin,hMax+1);
       s26.forEach((v,i)=>{
         labels.push('D'+dk+' '+fmtHour(hMin+i));
@@ -597,7 +600,7 @@ function getProductRankings(){
     return s;
   };
   dayKeys.forEach(dk=>{
-    const dayMaxH = RAW.dias[dk] ? RAW.dias[dk].max_hora : hMax;
+    const dayMaxH = curDias()[dk] ? curDias()[dk].max_hora : hMax;
     const effectiveMax = Math.min(hMax, dayMaxH);
     (RAW.prods[dk]||[]).forEach(p=>{
       if(!all[p.pid])all[p.pid]={name:p.name,q26:0,q25:0};
