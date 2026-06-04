@@ -374,7 +374,7 @@ function stepHour(which, dir) {
     state.hMax = n;
     if (state.hMax < state.hMin) state.hMin = Math.max(state.hMax, 0);
   }
-  updateSliderUI(); updateKPIs(); renderProducts();
+  updateSliderUI(); updateKPIs(); buildCharts(); renderProducts();
 }
 function updateSliderUI() {
   document.getElementById('stepMinVal').textContent = fmtHour(state.hMin);
@@ -582,12 +582,19 @@ function getProductRankings(){
   const hMin=state.hMin, hMax=state.hMax;
   const dayKeys=state.isTotal?Object.keys(RAW.prods).sort():[state.day];
   const all={};
-  const sliceSum=(o)=>{let s=0;for(let h=hMin;h<=hMax;h++)s+=(o[String(h)]||0);return s;};
+  // clamp hMax per day so sparse hours never go out of range
+  const sliceSum=(o, effectiveMax)=>{
+    let s=0;
+    for(let h=hMin;h<=effectiveMax;h++) s+=(o[String(h)]||0);
+    return s;
+  };
   dayKeys.forEach(dk=>{
+    const dayMaxH = RAW.dias[dk] ? RAW.dias[dk].max_hora : hMax;
+    const effectiveMax = Math.min(hMax, dayMaxH);
     (RAW.prods[dk]||[]).forEach(p=>{
       if(!all[p.pid])all[p.pid]={name:p.name,q26:0,q25:0};
-      all[p.pid].q26+=sliceSum(p.q26);
-      all[p.pid].q25+=sliceSum(p.q25);
+      all[p.pid].q26+=sliceSum(p.q26, effectiveMax);
+      all[p.pid].q25+=sliceSum(p.q25, 23); // 2025 is always full day
     });
   });
   const matched=Object.entries(all).map(([pid,v])=>{
