@@ -41,6 +41,10 @@ body{background:var(--gray1);color:var(--text);font-family:var(--font-body);font
 .day-tab.active{background:var(--red);color:#fff;border-color:var(--red);}
 .day-tab.total{border-style:dashed;}
 .day-tab.total.active{background:#1a2033;border-color:#1a2033;border-style:solid;}
+.view-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;background:var(--white);}
+.view-tab{padding:10px 24px;font-size:12px;font-weight:800;font-family:var(--font);cursor:pointer;background:none;border:none;color:var(--gray4);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.15s;}
+.view-tab:hover{color:var(--red);}
+.view-tab.active{color:var(--red);border-bottom-color:var(--red);}
 
 .tab-toggle{display:flex;border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
 .tab-btn{padding:7px 16px;font-size:12px;font-weight:800;font-family:var(--font);cursor:pointer;background:var(--gray1);border:none;transition:all 0.15s;color:var(--gray5);}
@@ -186,6 +190,10 @@ body{background:var(--gray1);color:var(--text);font-family:var(--font-body);font
 
 <div class="corte-banner"><span id="corteMsg">Cargando…</span></div>
 
+<div class="view-tabs">
+  <button class="view-tab active" id="viewTabCyber" onclick="setViewMode('cyber')">🛒 Cyber</button>
+  <button class="view-tab" id="viewTabSemana" onclick="setViewMode('semana')">📅 Semana</button>
+</div>
 <div class="ctrlbar">
   <div class="ctrl-group">
     <span class="ctrl-label">Período</span>
@@ -348,7 +356,7 @@ body{background:var(--gray1);color:var(--text);font-family:var(--font-body);font
 <script>
 var RAW = window.DASH_DATA;
 const PAGE_SIZE = 10;
-var state = { day: '1', hMin: 0, hMax: 23, view: 'acum', search: '', isTotal: false };
+var state = { day: '1', hMin: 0, hMax: 23, view: 'acum', search: '', isTotal: false, mode: 'cyber' };
 var pages = { top: PAGE_SIZE, grow: PAGE_SIZE, fall: PAGE_SIZE };
 var charts = {};
 
@@ -387,16 +395,16 @@ function updateSliderUI() {
 }
 
 // ── DAY TABS ──
-function curDay() { return RAW.dias[state.day] || RAW.dias[Object.keys(RAW.dias)[0]]; }
+function curDay() { const d = curDias(); return d[state.day] || d[Object.keys(d)[0]]; }
 
 function buildDayTabs() {
   const c = document.getElementById('dayTabs');
   c.innerHTML = '';
   const maxHoras = { '1': 23, '2': 23, '3': 23 }; // all closed
-  Object.keys(RAW.dias).sort().forEach(d => {
+  Object.keys(curDias()).sort().forEach(d => {
     const btn = document.createElement('button');
     btn.className = 'day-tab' + (d === state.day && !state.isTotal ? ' active' : '');
-    const closed = RAW.dias[d].max_hora === 23;
+    const closed = curDias()[d].max_hora === 23;
     btn.innerHTML = 'Día '+d+' <span class="'+(closed?'closed-badge':'partial-badge')+'">'+(closed?'✓ Cerrado':'En curso')+'</span>';
     btn.style.padding='5px 14px'; btn.style.lineHeight='1.6';
     btn.onclick = (function(dv){ return function(){ setDay(dv); }; })(d);
@@ -453,7 +461,7 @@ function updateCorteLabel() {
 function getTotalData() {
   const h26=Array(24).fill(null).map(()=>({orders:0,neto:0,cantidad:0}));
   const h25=Array(24).fill(null).map(()=>({orders:0,neto:0,cantidad:0}));
-  Object.values(RAW.dias).forEach(d=>{
+  Object.values(curDias()).forEach(d=>{
     d.h26.forEach((v,i)=>{if(i<24){h26[i].orders+=v.orders;h26[i].neto+=v.neto;h26[i].cantidad+=v.cantidad;}});
     d.h25.forEach((v,i)=>{if(i<24){h25[i].orders+=v.orders;h25[i].neto+=v.neto;h25[i].cantidad+=v.cantidad;}});
   });
@@ -504,7 +512,7 @@ function buildSummary(){
   const tbody=document.getElementById('summaryBody');
   tbody.innerHTML='';
   let tot26={orders:0,neto:0,cantidad:0}, tot25={orders:0,neto:0,cantidad:0};
-  Object.keys(RAW.dias).sort().forEach(cd=>{
+  Object.keys(curDias()).sort().forEach(cd=>{
     const d=RAW.dias[cd];
     const n26=d.h26.reduce((s,h)=>s+h.neto,0), o26=d.h26.reduce((s,h)=>s+h.orders,0);
     const n25=d.h25.reduce((s,h)=>s+h.neto,0), o25=d.h25.reduce((s,h)=>s+h.orders,0);
@@ -540,7 +548,7 @@ function buildCharts(){
   const hMin=state.hMin, hMax=state.hMax;
   let labels=[],n26=[],n25=[],o26=[],o25=[];
   if(state.isTotal){
-    Object.keys(RAW.dias).sort().forEach(dk=>{
+    Object.keys(curDias()).sort().forEach(dk=>{
       const d=RAW.dias[dk];
       const s26=d.h26.slice(hMin,hMax+1), s25=d.h25.slice(hMin,hMax+1);
       s26.forEach((v,i)=>{
@@ -637,12 +645,34 @@ function renderList(lId,bId,cId,arr,type){
 function renderProducts(){const r=getProductRankings();renderList('listTop','btnMoreTop','countTop',r.top_sold,'top');renderList('listGrow','btnMoreGrow','countGrow',r.growing,'grow');renderList('listFall','btnMoreFall','countFall',r.falling,'fall');}
 function showMore(type){pages[type]+=PAGE_SIZE;renderProducts();}
 
+// ── VIEW MODE ──
+function setViewMode(mode) {
+  state.mode = mode;
+  state.isTotal = false;
+  document.getElementById('viewTabCyber').classList.toggle('active', mode==='cyber');
+  document.getElementById('viewTabSemana').classList.toggle('active', mode==='semana');
+  // Reset to first day of new mode
+  const dias = curDias();
+  state.day = Object.keys(dias).sort()[0];
+  buildDayTabs();
+  initSlider();
+  state.hMax = curDay().max_hora;
+  updateSliderUI();
+  updateCorteLabel();
+  updateKPIs();
+  buildCharts();
+  pages={top:PAGE_SIZE,grow:PAGE_SIZE,fall:PAGE_SIZE};
+  renderProducts();
+}
+
 // ── INIT ──
 window.addEventListener('DOMContentLoaded',()=>{
-  state.day=Object.keys(RAW.dias).sort()[0];
+  state.mode = 'cyber';
+  state.day = Object.keys(curDias()).sort()[0];
   buildDayTabs();
-  document.getElementById('summarySection').style.display='none';
   initSlider();
+  state.hMax = curDay().max_hora;
+  updateSliderUI();
   updateCorteLabel(); updateKPIs(); buildCharts(); renderProducts();
 });
 </script>
